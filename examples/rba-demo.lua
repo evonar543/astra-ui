@@ -7,7 +7,7 @@ end
 
 -- Pin the library revision for this demo so executor-level HTTP caches cannot
 -- silently substitute an older copy of the UI library.
-local remoteUrl = "https://raw.githubusercontent.com/evonar543/astra-ui/1be41a1/src/AstraUI.lua"
+local remoteUrl = "https://raw.githubusercontent.com/evonar543/astra-ui/30077f7/src/AstraUI.lua"
 local source
 local localSourceExists = false
 
@@ -55,6 +55,14 @@ section:AddSlider({ Title = "Accent strength", Min = 0, Max = 100, Default = 72,
 section:AddDropdown({ Title = "Layout", Options = { "Compact", "Balanced", "Expanded" }, Default = "Balanced" })
 section:AddTextbox({ Title = "Local note", Placeholder = "Nothing is sent anywhere..." })
 section:AddKeybind({ Title = "Notify hotkey", Default = Enum.KeyCode.N, Callback = function() window:Notify({ Title = "AstraUI", Content = "Keybind works." }) end })
+
+local advanced = window:CreateTab({ Title = "Advanced", Icon = "✦" })
+local library = advanced:CreateSection({ Title = "New library widgets", Description = "Reusable controls for richer, organized interfaces." })
+library:AddDivider({ Text = "Live state" })
+local progress = library:AddProgress({ Title = "Demo progress", Default = 35, Color = window.Theme.Success })
+library:AddStepper({ Title = "Progress amount", Min = 0, Max = 100, Default = 35, Increment = 5, Callback = function(value) progress:Set(value) end })
+library:AddMultiSelect({ Title = "Visible modules", Options = { "Stats", "Logs", "Tools", "Alerts" }, Default = { "Stats", "Tools" }, Callback = function(values) window:Notify({ Title = "Modules", Content = #values .. " module(s) selected", Duration = 2 }) end })
+library:AddColorPalette({ Title = "Accent preview", Callback = function(_, name) window:Notify({ Title = "Palette", Content = name .. " selected", Duration = 2 }) end })
 
 environment.__ASTRA_UI_RBA_DEMO = {
 	window = window,

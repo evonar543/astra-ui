@@ -41,7 +41,7 @@ For an authorized local-script workflow, you can load the published source direc
 
 ```lua
 local AstraUI = assert(loadstring(game:HttpGet(
-	"https://raw.githubusercontent.com/evonar543/astra-ui/1be41a1/src/AstraUI.lua"
+	"https://raw.githubusercontent.com/evonar543/astra-ui/30077f7/src/AstraUI.lua"
 )))()
 ```
 
