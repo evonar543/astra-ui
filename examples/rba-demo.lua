@@ -46,7 +46,8 @@ status:AddParagraph({ Title = "Safe scope", Content = "No RemoteEvents, RemoteFu
 
 local controls = window:CreateTab({ Title = "Controls", Icon = "◈" })
 local section = controls:CreateSection({ Title = "Widget smoke test", Description = "All callbacks stay within the local GUI." })
-section:AddToggle({ Title = "Visual effects", Description = "Shows or hides the animated header accent.", Callback = function(value)
+window:SetVisualEffects(true)
+section:AddToggle({ Title = "Visual effects", Description = "Shows or hides the animated header accent.", Default = true, Callback = function(value)
 	window:SetVisualEffects(value)
 	window:Notify({ Title = "Visual effects", Content = value and "Header accent enabled" or "Header accent disabled" })
 end })
