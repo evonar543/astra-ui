@@ -5,8 +5,9 @@ if environment.__ASTRA_UI_RBA_DEMO and environment.__ASTRA_UI_RBA_DEMO.stop then
 	environment.__ASTRA_UI_RBA_DEMO.stop()
 end
 
--- Versioned URL avoids stale executor-level HTTP caches after a library update.
-local remoteUrl = "https://raw.githubusercontent.com/evonar543/astra-ui/main/src/AstraUI.lua?v=1.0.2"
+-- Pin the library revision for this demo so executor-level HTTP caches cannot
+-- silently substitute an older copy of the UI library.
+local remoteUrl = "https://raw.githubusercontent.com/evonar543/astra-ui/307aec7/src/AstraUI.lua"
 local source
 local localSourceExists = false
 
