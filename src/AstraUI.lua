@@ -207,6 +207,7 @@ function AstraUI:CreateWindow(options)
 		Size = UDim2.fromOffset(158, 32),
 		Parent = top,
 	})
+	searchBox.ZIndex = 3
 	round(searchBox, 8)
 	make("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), Parent = searchBox })
 
@@ -221,7 +222,24 @@ function AstraUI:CreateWindow(options)
 		Size = UDim2.fromOffset(22, 32),
 		Parent = top,
 	})
+	close.ZIndex = 3
 	round(close, 7)
+
+	-- The title strip is the only draggable area. Keeping it separate from the
+	-- search and close controls prevents normal clicks from capturing the cursor.
+	local dragHandle = make("TextButton", {
+		Name = "DragHandle",
+		Active = true,
+		AutoButtonColor = false,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Modal = false,
+		Text = "",
+		Position = UDim2.fromOffset(0, 0),
+		Size = UDim2.new(1, -218, 1, 0),
+		ZIndex = 2,
+		Parent = top,
+	})
 
 	local sidebar = make("Frame", {
 		Name = "Sidebar",
@@ -291,6 +309,7 @@ function AstraUI:CreateWindow(options)
 	end
 
 	local dragStart, frameStart, dragInput
+	local dragging = false
 	local function updateDrag(input)
 		local delta = input.Position - dragStart
 		local camera = workspace.CurrentCamera
@@ -301,20 +320,26 @@ function AstraUI:CreateWindow(options)
 		local nextY = math.clamp(frameStart.Y.Offset + delta.Y, -size.Y / 2 + 25, viewport.Y - size.Y / 2 - 25)
 		frame.Position = UDim2.new(frameStart.X.Scale, nextX, frameStart.Y.Scale, nextY)
 	end
-	track(top.InputBegan:Connect(function(input)
+	local function stopDragging()
+		dragging = false
+		dragInput = nil
+		dragStart = nil
+	end
+	track(dragHandle.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			dragStart = input.Position
 			frameStart = frame.Position
-			track(input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then dragInput = nil end
-			end))
+			dragging = true
 		end
 	end))
-	track(top.InputChanged:Connect(function(input)
+	track(dragHandle.InputChanged:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
 	end))
 	track(UserInputService.InputChanged:Connect(function(input)
-		if input == dragInput and dragStart then updateDrag(input) end
+		if dragging and input == dragInput and dragStart and (input.Position - dragStart).Magnitude >= 3 then updateDrag(input) end
+	end))
+	track(UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then stopDragging() end
 	end))
 
 	local grip = make("TextButton", {
@@ -330,23 +355,29 @@ function AstraUI:CreateWindow(options)
 		Parent = frame,
 	})
 	local resizeStart, initialSize, resizeInput
+	local resizing = false
 	track(grip.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			resizeStart, initialSize = input.Position, frame.AbsoluteSize
-			track(input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then resizeInput = nil end
-			end))
+			resizing = true
 		end
 	end))
 	track(grip.InputChanged:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then resizeInput = input end
 	end))
 	track(UserInputService.InputChanged:Connect(function(input)
-		if input == resizeInput and resizeStart then
+		if resizing and input == resizeInput and resizeStart then
 			local delta = input.Position - resizeStart
 			local width = math.clamp(initialSize.X + delta.X, self.MinSize.X, self.MaxSize.X)
 			local height = math.clamp(initialSize.Y + delta.Y, self.MinSize.Y, self.MaxSize.Y)
 			frame.Size = UDim2.fromOffset(width, height)
+		end
+	end))
+	track(UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			resizing = false
+			resizeInput = nil
+			resizeStart = nil
 		end
 	end))
 
