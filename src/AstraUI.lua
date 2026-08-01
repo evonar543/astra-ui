@@ -1,9 +1,9 @@
 --!strict
--- AstraUI 1.0.0
+-- AstraUI 1.0.2
 -- A self-contained Roblox UI toolkit for LocalScripts and ModuleScripts.
 
 local AstraUI = {}
-AstraUI.Version = "1.0.1"
+AstraUI.Version = "1.0.2"
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
