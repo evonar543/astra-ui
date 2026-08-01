@@ -43,7 +43,7 @@ local AstraUI = assert(loadstring(game:HttpGet(
 )))()
 ```
 
-Or run `examples/rba-demo.lua`; it first uses the local source at `C:/Users/Blake/Documents/Vision/AstraUI/src/AstraUI.lua`, then falls back to the GitHub raw URL.
+Or run `examples/rba-demo.lua`; it loads the GitHub raw source by default. If your executor has an allowed local script directory, set `getgenv().ASTRA_UI_LOCAL_PATH` to that file before running the demo.
 
 ## API
 

@@ -5,15 +5,16 @@ if environment.__ASTRA_UI_RBA_DEMO and environment.__ASTRA_UI_RBA_DEMO.stop then
 	environment.__ASTRA_UI_RBA_DEMO.stop()
 end
 
-local localPath = "C:/Users/Blake/Documents/Vision/AstraUI/src/AstraUI.lua"
 local remoteUrl = "https://raw.githubusercontent.com/evonar543/astra-ui/main/src/AstraUI.lua"
 local source
 local localSourceExists = false
 
--- Some executors reject paths outside their own allow-list. Treat that as an
--- unavailable local copy and use the published source instead of failing.
-if type(readfile) == "function" and type(isfile) == "function" then
-	local checked, exists = pcall(isfile, localPath)
+-- Default to the published file: several executors hard-fail when asked about
+-- a path outside their own allow-list. A developer may opt into a local copy
+-- explicitly by setting getgenv().ASTRA_UI_LOCAL_PATH to an allowed path.
+local localPath = environment.ASTRA_UI_LOCAL_PATH
+if type(localPath) == "string" and type(readfile) == "function" and type(isfile) == "function" then
+	local checked, exists = pcall(function() return isfile(localPath) end)
 	localSourceExists = checked and exists == true
 end
 
