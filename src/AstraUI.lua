@@ -1,9 +1,9 @@
 --!strict
--- AstraUI 1.0.2
+-- AstraUI 1.1.0
 -- A self-contained Roblox UI toolkit for LocalScripts and ModuleScripts.
 
 local AstraUI = {}
-AstraUI.Version = "1.0.2"
+AstraUI.Version = "1.1.0"
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -182,12 +182,12 @@ function AstraUI:CreateWindow(options)
 		Size = UDim2.fromScale(1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
 	})
-	text(top, options.Title or "Astra Window", 18, theme.Text, {
+	local titleLabel = text(top, options.Title or "Astra Window", 18, theme.Text, {
 		Font = Enum.Font.GothamBold,
 		Position = UDim2.fromOffset(68, 14),
 		Size = UDim2.new(1, -260, 0, 24),
 	})
-	text(top, options.Subtitle or "Focused tools, clear controls.", 12, theme.Subtext, {
+	local subtitleLabel = text(top, options.Subtitle or "Focused tools, clear controls.", 12, theme.Subtext, {
 		Position = UDim2.fromOffset(68, 37),
 		Size = UDim2.new(1, -260, 0, 18),
 	})
@@ -226,28 +226,6 @@ function AstraUI:CreateWindow(options)
 	close.ZIndex = 3
 	round(close, 7)
 
-	local accentRail = make("Frame", {
-		Name = "AccentRail",
-		AnchorPoint = Vector2.new(0.5, 1),
-		BackgroundColor3 = theme.Accent,
-		BorderSizePixel = 0,
-		Position = UDim2.new(0, -88, 1, 0),
-		Size = UDim2.fromOffset(220, 3),
-		Visible = false,
-		ZIndex = 3,
-		Parent = top,
-	})
-	round(accentRail, 2)
-	make("UIGradient", {
-		Color = ColorSequence.new(theme.AccentMuted, theme.Accent),
-		Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 1),
-			NumberSequenceKeypoint.new(0.28, 0.15),
-			NumberSequenceKeypoint.new(0.72, 0.15),
-			NumberSequenceKeypoint.new(1, 1),
-		}),
-		Parent = accentRail,
-	})
 	local effectWash = make("Frame", {
 		Name = "EffectWash",
 		BackgroundColor3 = theme.Accent,
@@ -335,10 +313,11 @@ function AstraUI:CreateWindow(options)
 		MinSize = options.MinSize or Vector2.new(520, 340),
 		MaxSize = options.MaxSize or Vector2.new(1100, 760),
 		Notifications = notifications,
-		AccentRail = accentRail,
 		EffectWash = effectWash,
 		EffectStroke = effectStroke,
 		FrameStroke = frameStroke,
+		TitleLabel = titleLabel,
+		SubtitleLabel = subtitleLabel,
 		VisualEffects = false,
 		EffectToken = 0,
 		EffectTween = nil,
@@ -470,7 +449,6 @@ function Window:SetVisualEffects(enabled)
 		self.EffectTween = nil
 	end
 	if not self.VisualEffects then
-		self.AccentRail.Visible = false
 		self.EffectWash.Visible = false
 		self.EffectStroke.Enabled = false
 		self.FrameStroke.Color = self.Theme.Stroke
@@ -479,19 +457,15 @@ function Window:SetVisualEffects(enabled)
 	end
 
 	local token = self.EffectToken
-	self.AccentRail.Visible = true
 	self.EffectWash.Visible = true
 	self.EffectStroke.Enabled = true
 	self.FrameStroke.Color = self.Theme.Accent
 	self.FrameStroke.Transparency = 0.1
 	task.spawn(function()
 		while not self.Closed and self.VisualEffects and token == self.EffectToken do
-			self.AccentRail.Position = UDim2.new(0, -110, 1, 0)
 			tween(self.EffectStroke, 0.7, { Transparency = 0.22 })
 			tween(self.EffectWash, 0.7, { BackgroundTransparency = 0.86 })
-			local animation = tween(self.AccentRail, 1.7, { Position = UDim2.new(1, 110, 1, 0) })
-			self.EffectTween = animation
-			animation.Completed:Wait()
+			task.wait(0.7)
 			if self.VisualEffects and token == self.EffectToken then
 				tween(self.EffectStroke, 0.7, { Transparency = 0.52 })
 				tween(self.EffectWash, 0.7, { BackgroundTransparency = 0.93 })
@@ -503,6 +477,19 @@ end
 
 function Window:ToggleVisible()
 	self:SetVisible(not self.Visible)
+end
+
+function Window:Center()
+	if self.Closed then return end
+	self.Frame.Position = UDim2.fromScale(0.5, 0.5)
+end
+
+function Window:SetTitle(value)
+	self.TitleLabel.Text = tostring(value)
+end
+
+function Window:SetSubtitle(value)
+	self.SubtitleLabel.Text = tostring(value)
 end
 
 function Window:SetToggleKey(keyCode)
@@ -542,6 +529,11 @@ function Window:Destroy()
 	if self.EffectTween then self.EffectTween:Cancel() end
 	for _, connection in ipairs(self.Connections) do connection:Disconnect() end
 	self.Gui:Destroy()
+end
+
+function Window:_Track(connection)
+	table.insert(self.Connections, connection)
+	return connection
 end
 
 function Window:CreateTab(options)
@@ -631,6 +623,68 @@ function Section:AddLabel(options)
 	return { Set = function(_, value) label.Text = tostring(value) end, Container = row }
 end
 
+function Section:AddDivider(options)
+	options = options or {}
+	local row = self:_row(options.Height or 18, options.Text or "")
+	local line = make("Frame", { BackgroundColor3 = self.Theme.Stroke, BackgroundTransparency = 0.45, BorderSizePixel = 0, Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.new(1, 0, 0, 1), Parent = row })
+	if options.Text then
+		local label = text(row, options.Text, 10, self.Theme.Subtext, { BackgroundColor3 = self.Theme.Surface, BackgroundTransparency = 0, Position = UDim2.fromOffset(8, 0), Size = UDim2.fromOffset(160, options.Height or 18), ZIndex = 1 })
+		make("UIPadding", { PaddingLeft = UDim.new(0, 5), PaddingRight = UDim.new(0, 5), Parent = label })
+	end
+	return { Container = row, Line = line }
+end
+
+function Section:AddProgress(options)
+	options = options or {}
+	local minimum, maximum = options.Min or 0, options.Max or 100
+	local range = math.max(maximum - minimum, 1)
+	local value = math.clamp(options.Default or minimum, minimum, maximum)
+	local row = self:_row(options.Height or 51, (options.Title or "Progress") .. " " .. tostring(value))
+	text(row, options.Title or "Progress", 12, self.Theme.Text, { Size = UDim2.new(1, -60, 0, 18) })
+	local valueLabel = text(row, "", 11, self.Theme.Accent, { Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(1, -58, 0, 0), Size = UDim2.fromOffset(58, 18) })
+	local track = make("Frame", { BackgroundColor3 = self.Theme.SurfaceRaised, BorderSizePixel = 0, Position = UDim2.fromOffset(0, 29), Size = UDim2.new(1, 0, 0, 9), Parent = row })
+	round(track, 5)
+	local fill = make("Frame", { BackgroundColor3 = options.Color or self.Theme.Accent, BorderSizePixel = 0, Size = UDim2.new(0, 0, 1, 0), Parent = track })
+	round(fill, 5)
+	local api = { Container = row, Value = value }
+	function api:Set(nextValue, silent)
+		value = math.clamp(nextValue, minimum, maximum)
+		self.Value = value
+		local percent = (value - minimum) / range
+		valueLabel.Text = options.Format and options.Format(value, percent) or string.format("%d%%", math.floor(percent * 100 + 0.5))
+		tween(fill, 0.16, { Size = UDim2.new(percent, 0, 1, 0) })
+		if not silent then call(options.Callback, value, percent) end
+	end
+	function api:Increment(amount)
+		self:Set(value + (amount or 1))
+	end
+	api:Set(value, true)
+	return api
+end
+
+function Section:AddStepper(options)
+	options = options or {}
+	local minimum, maximum = options.Min or 0, options.Max or 10
+	local increment = options.Increment or 1
+	local value = math.clamp(options.Default or minimum, minimum, maximum)
+	local row = self:_row(42, (options.Title or "Stepper") .. " " .. tostring(value))
+	text(row, options.Title or "Stepper", 12, self.Theme.Text, { Size = UDim2.new(1, -146, 0, 20) })
+	local minus = make("TextButton", { AutoButtonColor = false, BackgroundColor3 = self.Theme.SurfaceRaised, BorderSizePixel = 0, Font = Enum.Font.GothamBold, Text = "−", TextColor3 = self.Theme.Text, TextSize = 17, Position = UDim2.new(1, -138, 0.5, -13), Size = UDim2.fromOffset(28, 26), Parent = row })
+	local valueLabel = text(row, tostring(value), 12, self.Theme.Accent, { Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.new(1, -107, 0.5, -13), Size = UDim2.fromOffset(65, 26) })
+	local plus = make("TextButton", { AutoButtonColor = false, BackgroundColor3 = self.Theme.SurfaceRaised, BorderSizePixel = 0, Font = Enum.Font.GothamBold, Text = "+", TextColor3 = self.Theme.Text, TextSize = 16, Position = UDim2.new(1, -39, 0.5, -13), Size = UDim2.fromOffset(28, 26), Parent = row })
+	for _, button in ipairs({ minus, plus }) do round(button, 7); bindHover(button, self.Theme) end
+	local api = { Container = row, Value = value }
+	function api:Set(nextValue, silent)
+		value = math.clamp(nextValue, minimum, maximum)
+		self.Value = value
+		valueLabel.Text = tostring(value)
+		if not silent then call(options.Callback, value) end
+	end
+	minus.MouseButton1Click:Connect(function() api:Set(value - increment) end)
+	plus.MouseButton1Click:Connect(function() api:Set(value + increment) end)
+	return api
+end
+
 function Section:AddParagraph(options)
 	options = options or {}
 	local row = self:_row(options.Height or 58, (options.Title or "") .. " " .. (options.Content or ""))
@@ -654,23 +708,24 @@ end
 
 function Section:AddToggle(options)
 	options = options or {}
+	local theme = self.Theme
 	local value = options.Default == true
 	local row = self:_row(40, (options.Title or "Toggle") .. " " .. (options.Description or ""))
 	local hitbox = make("TextButton", { Active = true, AutoButtonColor = false, BackgroundTransparency = 1, BorderSizePixel = 0, Modal = false, Text = "", Size = UDim2.fromScale(1, 1), ZIndex = 0, Parent = row })
 	text(row, options.Title or "Toggle", 12, self.Theme.Text, { Position = UDim2.fromOffset(0, 0), Size = UDim2.new(1, -122, 0, 20), ZIndex = 1 })
 	if options.Description then text(row, options.Description, 10, self.Theme.Subtext, { Position = UDim2.fromOffset(0, 19), Size = UDim2.new(1, -122, 0, 17), ZIndex = 1 }) end
-	local state = text(row, value and "ON" or "OFF", 10, value and self.Theme.Accent or self.Theme.Subtext, { Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(1, -101, 0.5, -9), Size = UDim2.fromOffset(41, 18), ZIndex = 2 })
-	local switch = make("TextButton", { Active = true, AutoButtonColor = false, BackgroundColor3 = value and self.Theme.Accent or self.Theme.SurfaceRaised, BorderSizePixel = 0, Text = "", Position = UDim2.new(1, -48, 0.5, -11), Size = UDim2.fromOffset(42, 22), ZIndex = 2, Parent = row })
+	local state = text(row, value and "ON" or "OFF", 10, value and theme.Accent or theme.Subtext, { Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(1, -101, 0.5, -9), Size = UDim2.fromOffset(41, 18), ZIndex = 2 })
+	local switch = make("TextButton", { Active = true, AutoButtonColor = false, BackgroundColor3 = value and theme.Accent or theme.SurfaceRaised, BorderSizePixel = 0, Text = "", Position = UDim2.new(1, -48, 0.5, -11), Size = UDim2.fromOffset(42, 22), ZIndex = 2, Parent = row })
 	round(switch, 11)
 	local dot = make("Frame", { BackgroundColor3 = self.Theme.Text, BorderSizePixel = 0, Position = value and UDim2.fromOffset(22, 3) or UDim2.fromOffset(3, 3), Size = UDim2.fromOffset(16, 16), ZIndex = 3, Parent = switch })
 	round(dot, 8)
 	local api = { Container = row, Value = value }
 	function api:Set(nextValue, silent)
 		value, self.Value = nextValue == true, nextValue == true
-		tween(switch, 0.12, { BackgroundColor3 = value and self.Theme.Accent or self.Theme.SurfaceRaised })
+		tween(switch, 0.12, { BackgroundColor3 = value and theme.Accent or theme.SurfaceRaised })
 		tween(dot, 0.12, { Position = value and UDim2.fromOffset(22, 3) or UDim2.fromOffset(3, 3) })
 		state.Text = value and "ON" or "OFF"
-		state.TextColor3 = value and self.Theme.Accent or self.Theme.Subtext
+		state.TextColor3 = value and theme.Accent or theme.Subtext
 		if not silent then call(options.Callback, value) end
 	end
 	switch.MouseButton1Click:Connect(function() api:Set(not value) end)
@@ -698,15 +753,15 @@ function Section:AddSlider(options)
 		if not silent then call(options.Callback, value) end
 	end
 	local dragging = false
-	track.InputBegan:Connect(function(input)
+	self.Window:_Track(track.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true; setFromPosition(input.Position) end
-	end)
-	UserInputService.InputChanged:Connect(function(input)
+	end))
+	self.Window:_Track(UserInputService.InputChanged:Connect(function(input)
 		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then setFromPosition(input.Position) end
-	end)
-	UserInputService.InputEnded:Connect(function(input)
+	end))
+	self.Window:_Track(UserInputService.InputEnded:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
-	end)
+	end))
 	local api = { Container = row, Value = value }
 	function api:Set(nextValue, silent)
 		value = math.clamp(nextValue, minimum, maximum); self.Value = value
@@ -754,6 +809,106 @@ function Section:AddDropdown(options)
 	return api
 end
 
+function Section:AddMultiSelect(options)
+	options = options or {}
+	local choices = options.Options or {}
+	local selected = {}
+	for _, choice in ipairs(options.Default or {}) do selected[tostring(choice)] = true end
+	local row = self:_row(options.Height or 76, (options.Title or "Multi-select") .. " " .. table.concat(choices, " "))
+	text(row, options.Title or "Multi-select", 12, self.Theme.Text, { Size = UDim2.new(1, 0, 0, 18) })
+	local holder = make("ScrollingFrame", { Active = true, AutomaticCanvasSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, BorderSizePixel = 0, CanvasSize = UDim2.new(), ScrollBarThickness = 0, ScrollingDirection = Enum.ScrollingDirection.X, Position = UDim2.fromOffset(0, 25), Size = UDim2.new(1, 0, 0, 31), Parent = row })
+	make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), Parent = holder })
+	local buttons = {}
+	local api = { Container = row, Values = {} }
+	local function values()
+		local result = {}
+		for _, choice in ipairs(choices) do if selected[tostring(choice)] then table.insert(result, choice) end end
+		return result
+	end
+	local function render()
+		api.Values = values()
+		for choice, button in pairs(buttons) do
+			local active = selected[choice] == true
+			button.BackgroundColor3 = active and self.Theme.AccentMuted or self.Theme.SurfaceRaised
+			button.TextColor3 = active and self.Theme.Text or self.Theme.Subtext
+		end
+	end
+	for _, rawChoice in ipairs(choices) do
+		local choice = tostring(rawChoice)
+		local button = make("TextButton", { AutoButtonColor = false, BackgroundColor3 = self.Theme.SurfaceRaised, BorderSizePixel = 0, Font = Enum.Font.GothamMedium, Text = choice, TextColor3 = self.Theme.Subtext, TextSize = 10, Size = UDim2.fromOffset(math.max(64, #choice * 7 + 20), 28), Parent = holder })
+		round(button, 7)
+		buttons[choice] = button
+		button.MouseButton1Click:Connect(function()
+			selected[choice] = not selected[choice]
+			render()
+			call(options.Callback, api.Values)
+		end)
+	end
+	function api:Set(choice, enabled, silent)
+		selected[tostring(choice)] = enabled == true
+		render()
+		if not silent then call(options.Callback, api.Values) end
+	end
+	function api:Clear(silent)
+		for key in pairs(selected) do selected[key] = nil end
+		render()
+		if not silent then call(options.Callback, api.Values) end
+	end
+	render()
+	return api
+end
+
+function Section:AddColorPalette(options)
+	options = options or {}
+	local choices = options.Options or {
+		{ Name = "Blue", Color = self.Theme.Accent },
+		{ Name = "Green", Color = self.Theme.Success },
+		{ Name = "Gold", Color = self.Theme.Warning },
+		{ Name = "Red", Color = self.Theme.Danger },
+	}
+	local selected = options.Default or choices[1].Name
+	local row = self:_row(options.Height or 70, (options.Title or "Color palette"))
+	text(row, options.Title or "Color palette", 12, self.Theme.Text, { Size = UDim2.new(1, -100, 0, 18) })
+	local nameLabel = text(row, tostring(selected), 10, self.Theme.Subtext, { TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(1, -96, 0, 0), Size = UDim2.fromOffset(96, 18) })
+	local holder = make("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 27), Size = UDim2.new(1, 0, 0, 30), Parent = row })
+	make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), Parent = holder })
+	local buttons, strokes = {}, {}
+	local api = { Container = row, Value = nil, Name = selected }
+	local function find(name)
+		for _, choice in ipairs(choices) do if choice.Name == name then return choice end end
+	end
+	local function render()
+		local choice = find(selected)
+		api.Name, api.Value = selected, choice and choice.Color or nil
+		nameLabel.Text = tostring(selected)
+		for name, stroke in pairs(strokes) do
+			stroke.Enabled = name == selected
+		end
+	end
+	for _, choice in ipairs(choices) do
+		local button = make("TextButton", { AutoButtonColor = false, BackgroundColor3 = choice.Color, BorderSizePixel = 0, Text = "", Size = UDim2.fromOffset(29, 29), Parent = holder })
+		round(button, 8)
+		local stroke = outline(button, self.Theme.Text, 0)
+		stroke.Thickness = 2
+		buttons[choice.Name], strokes[choice.Name] = button, stroke
+		button.MouseButton1Click:Connect(function()
+			selected = choice.Name
+			render()
+			call(options.Callback, choice.Color, choice.Name)
+		end)
+	end
+	function api:Set(name, silent)
+		local choice = find(name)
+		if not choice then return false end
+		selected = choice.Name
+		render()
+		if not silent then call(options.Callback, choice.Color, choice.Name) end
+		return true
+	end
+	render()
+	return api
+end
+
 function Section:AddKeybind(options)
 	options = options or {}
 	local value = options.Default or Enum.KeyCode.Unknown
@@ -764,12 +919,12 @@ function Section:AddKeybind(options)
 	round(button, 7)
 	local api = { Container = row, Value = value }
 	button.MouseButton1Click:Connect(function() waiting = true; button.Text = "Press a key..." end)
-	UserInputService.InputBegan:Connect(function(input, processed)
+	self.Window:_Track(UserInputService.InputBegan:Connect(function(input, processed)
 		if waiting then
 			waiting = false; value, api.Value = input.KeyCode, input.KeyCode; button.Text = keyName(input); call(options.Callback, value); return
 		end
 		if not processed and input.KeyCode == value then call(options.Callback, value) end
-	end)
+	end))
 	function api:Set(nextValue) value, self.Value = nextValue, nextValue; button.Text = nextValue.Name end
 	return api
 end

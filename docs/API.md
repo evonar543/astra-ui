@@ -13,7 +13,8 @@ local window = AstraUI:CreateWindow(options)
 - `window:SelectTab(tab)`
 - `window:Notify({ Title, Content, Color, Duration })`
 - `window:SetVisible(boolean)` / `window:ToggleVisible()`
-- `window:SetVisualEffects(boolean)` controls the animated header accent rail
+- `window:SetVisualEffects(boolean)` controls the header and window glow
+- `window:Center()`, `window:SetTitle(value)`, and `window:SetSubtitle(value)`
 - `window:SetToggleKey(Enum.KeyCode)`
 - `window:Destroy()`
 
@@ -31,12 +32,17 @@ local section = window:CreateTab({ Title = "Main" }):CreateSection({
 Each widget returns an object with a `Container` and its appropriate state methods.
 
 - `section:AddLabel({ Text, Color, TextSize, Height })` → `:Set(value)`
+- `section:AddDivider({ Text, Height })`
 - `section:AddParagraph({ Title, Content, Height })`
 - `section:AddButton({ Title, Description, Callback })` → `:Press()`, `:SetText(value)`
 - `section:AddToggle({ Title, Description, Default, Callback })` → `:Set(boolean, silent)`
 - `section:AddSlider({ Title, Min, Max, Default, Increment, Callback })` → `:Set(number, silent)`
+- `section:AddProgress({ Title, Min, Max, Default, Color, Format, Callback })` → `:Set(number, silent)`, `:Increment(amount)`
+- `section:AddStepper({ Title, Min, Max, Default, Increment, Callback })` → `:Set(number, silent)`
 - `section:AddTextbox({ Title, Placeholder, Default, OnFocusLost, Callback })` → `:Get()`, `:Set(value)`
 - `section:AddDropdown({ Title, Options, Default, Callback })` → `:Set(value, silent)`
+- `section:AddMultiSelect({ Title, Options, Default, Callback })` → `:Set(value, enabled, silent)`, `:Clear(silent)`
+- `section:AddColorPalette({ Title, Options, Default, Callback })` → `:Set(name, silent)`
 - `section:AddKeybind({ Title, Default, Callback })` → `:Set(Enum.KeyCode)`
 - `section:AddStat({ Title, Value, Color })` → `:Set(value)`
 
