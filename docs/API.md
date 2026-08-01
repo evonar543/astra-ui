@@ -13,6 +13,7 @@ local window = AstraUI:CreateWindow(options)
 - `window:SelectTab(tab)`
 - `window:Notify({ Title, Content, Color, Duration })`
 - `window:SetVisible(boolean)` / `window:ToggleVisible()`
+- `window:SetVisualEffects(boolean)` controls the animated header accent rail
 - `window:SetToggleKey(Enum.KeyCode)`
 - `window:Destroy()`
 

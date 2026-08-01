@@ -3,7 +3,7 @@
 -- A self-contained Roblox UI toolkit for LocalScripts and ModuleScripts.
 
 local AstraUI = {}
-AstraUI.Version = "1.0.0"
+AstraUI.Version = "1.0.1"
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -225,6 +225,29 @@ function AstraUI:CreateWindow(options)
 	close.ZIndex = 3
 	round(close, 7)
 
+	local accentRail = make("Frame", {
+		Name = "AccentRail",
+		AnchorPoint = Vector2.new(0.5, 1),
+		BackgroundColor3 = theme.Accent,
+		BorderSizePixel = 0,
+		Position = UDim2.new(0, -88, 1, 0),
+		Size = UDim2.fromOffset(176, 2),
+		Visible = false,
+		ZIndex = 3,
+		Parent = top,
+	})
+	round(accentRail, 2)
+	make("UIGradient", {
+		Color = ColorSequence.new(theme.AccentMuted, theme.Accent),
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.28, 0.15),
+			NumberSequenceKeypoint.new(0.72, 0.15),
+			NumberSequenceKeypoint.new(1, 1),
+		}),
+		Parent = accentRail,
+	})
+
 	-- The title strip is the only draggable area. Keeping it separate from the
 	-- search and close controls prevents normal clicks from capturing the cursor.
 	local dragHandle = make("TextButton", {
@@ -240,6 +263,27 @@ function AstraUI:CreateWindow(options)
 		ZIndex = 2,
 		Parent = top,
 	})
+	local dragGrip = make("Frame", {
+		Name = "DragGrip",
+		Active = false,
+		BackgroundTransparency = 1,
+		Position = UDim2.new(1, -244, 0, 24),
+		Size = UDim2.fromOffset(18, 24),
+		ZIndex = 3,
+		Parent = top,
+	})
+	for index = 0, 2 do
+		local line = make("Frame", {
+			BackgroundColor3 = theme.Subtext,
+			BackgroundTransparency = 0.28,
+			BorderSizePixel = 0,
+			Position = UDim2.fromOffset(4, 4 + index * 6),
+			Size = UDim2.fromOffset(10, 2),
+			ZIndex = 3,
+			Parent = dragGrip,
+		})
+		round(line, 1)
+	end
 
 	local sidebar = make("Frame", {
 		Name = "Sidebar",
@@ -301,6 +345,10 @@ function AstraUI:CreateWindow(options)
 		MinSize = options.MinSize or Vector2.new(520, 340),
 		MaxSize = options.MaxSize or Vector2.new(1100, 760),
 		Notifications = notifications,
+		AccentRail = accentRail,
+		VisualEffects = false,
+		EffectToken = 0,
+		EffectTween = nil,
 	}, Window)
 
 	local function track(connection)
@@ -407,6 +455,31 @@ function Window:SetVisible(isVisible)
 	end
 end
 
+function Window:SetVisualEffects(enabled)
+	if self.Closed then return end
+	self.VisualEffects = enabled == true
+	self.EffectToken = self.EffectToken + 1
+	if self.EffectTween then
+		self.EffectTween:Cancel()
+		self.EffectTween = nil
+	end
+	if not self.VisualEffects then
+		self.AccentRail.Visible = false
+		return
+	end
+
+	local token = self.EffectToken
+	self.AccentRail.Visible = true
+	task.spawn(function()
+		while not self.Closed and self.VisualEffects and token == self.EffectToken do
+			self.AccentRail.Position = UDim2.new(0, -88, 1, 0)
+			local animation = tween(self.AccentRail, 1.9, { Position = UDim2.new(1, 88, 1, 0) })
+			self.EffectTween = animation
+			animation.Completed:Wait()
+		end
+	end)
+end
+
 function Window:ToggleVisible()
 	self:SetVisible(not self.Visible)
 end
@@ -445,6 +518,7 @@ end
 function Window:Destroy()
 	if self.Closed then return end
 	self.Closed = true
+	if self.EffectTween then self.EffectTween:Cancel() end
 	for _, connection in ipairs(self.Connections) do connection:Disconnect() end
 	self.Gui:Destroy()
 end
