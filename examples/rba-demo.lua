@@ -8,12 +8,20 @@ end
 local localPath = "C:/Users/Blake/Documents/Vision/AstraUI/src/AstraUI.lua"
 local remoteUrl = "https://raw.githubusercontent.com/evonar543/astra-ui/main/src/AstraUI.lua"
 local source
+local localSourceExists = false
 
-if type(readfile) == "function" and type(isfile) == "function" and isfile(localPath) then
-	source = readfile(localPath)
-else
-	source = game:HttpGet(remoteUrl)
+-- Some executors reject paths outside their own allow-list. Treat that as an
+-- unavailable local copy and use the published source instead of failing.
+if type(readfile) == "function" and type(isfile) == "function" then
+	local checked, exists = pcall(isfile, localPath)
+	localSourceExists = checked and exists == true
 end
+
+if localSourceExists then
+	local readOk, localSource = pcall(readfile, localPath)
+	if readOk then source = localSource end
+end
+if not source then source = game:HttpGet(remoteUrl) end
 
 local factory, loadError = loadstring(source)
 assert(factory, "AstraUI could not be loaded: " .. tostring(loadError))
