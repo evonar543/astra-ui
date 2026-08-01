@@ -7,7 +7,7 @@ This library is designed for interfaces you own or are authorized to run. The in
 ## Features
 
 - Rounded, dark interface with themed accents and notifications
-- Bounded dragging, visible drag grip, and resize grip, so the window stays usable on screen
+- Bounded dragging and resize grip, so the window stays usable on screen
 - Optional animated header accent controlled by `window:SetVisualEffects(boolean)`
 - Tabs, section cards, built-in control search, and a Right Control visibility hotkey
 - Button, toggle, slider, dropdown, textbox, keybind, label, paragraph, and stat widgets

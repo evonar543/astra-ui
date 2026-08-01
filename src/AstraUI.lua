@@ -263,28 +263,6 @@ function AstraUI:CreateWindow(options)
 		ZIndex = 2,
 		Parent = top,
 	})
-	local dragGrip = make("Frame", {
-		Name = "DragGrip",
-		Active = false,
-		BackgroundTransparency = 1,
-		Position = UDim2.new(1, -244, 0, 24),
-		Size = UDim2.fromOffset(18, 24),
-		ZIndex = 3,
-		Parent = top,
-	})
-	for index = 0, 2 do
-		local line = make("Frame", {
-			BackgroundColor3 = theme.Subtext,
-			BackgroundTransparency = 0.28,
-			BorderSizePixel = 0,
-			Position = UDim2.fromOffset(4, 4 + index * 6),
-			Size = UDim2.fromOffset(10, 2),
-			ZIndex = 3,
-			Parent = dragGrip,
-		})
-		round(line, 1)
-	end
-
 	local sidebar = make("Frame", {
 		Name = "Sidebar",
 		BackgroundColor3 = theme.Surface,
