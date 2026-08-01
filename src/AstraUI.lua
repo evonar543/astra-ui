@@ -150,7 +150,7 @@ function AstraUI:CreateWindow(options)
 		Parent = gui,
 	})
 	round(frame, 12)
-	outline(frame, theme.Stroke, 0.25)
+	local frameStroke = outline(frame, theme.Stroke, 0.25)
 
 	local top = make("Frame", {
 		Name = "Topbar",
@@ -160,6 +160,7 @@ function AstraUI:CreateWindow(options)
 		Parent = frame,
 	})
 	round(top, 12)
+	local effectStroke = outline(top, theme.Accent, 1)
 	local topFix = make("Frame", {
 		BackgroundColor3 = theme.Surface,
 		BorderSizePixel = 0,
@@ -231,7 +232,7 @@ function AstraUI:CreateWindow(options)
 		BackgroundColor3 = theme.Accent,
 		BorderSizePixel = 0,
 		Position = UDim2.new(0, -88, 1, 0),
-		Size = UDim2.fromOffset(176, 2),
+		Size = UDim2.fromOffset(220, 3),
 		Visible = false,
 		ZIndex = 3,
 		Parent = top,
@@ -247,6 +248,17 @@ function AstraUI:CreateWindow(options)
 		}),
 		Parent = accentRail,
 	})
+	local effectWash = make("Frame", {
+		Name = "EffectWash",
+		BackgroundColor3 = theme.Accent,
+		BackgroundTransparency = 0.91,
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(1, 1),
+		Visible = false,
+		ZIndex = 0,
+		Parent = top,
+	})
+	round(effectWash, 12)
 
 	-- The title strip is the only draggable area. Keeping it separate from the
 	-- search and close controls prevents normal clicks from capturing the cursor.
@@ -324,6 +336,9 @@ function AstraUI:CreateWindow(options)
 		MaxSize = options.MaxSize or Vector2.new(1100, 760),
 		Notifications = notifications,
 		AccentRail = accentRail,
+		EffectWash = effectWash,
+		EffectStroke = effectStroke,
+		FrameStroke = frameStroke,
 		VisualEffects = false,
 		EffectToken = 0,
 		EffectTween = nil,
@@ -351,11 +366,17 @@ function AstraUI:CreateWindow(options)
 		dragInput = nil
 		dragStart = nil
 	end
+	local function setCursor(icon)
+		UserInputService.MouseIcon = icon
+	end
+	track(dragHandle.MouseEnter:Connect(function() setCursor("rbxasset://textures/Cursors/KeyboardMouse/OpenHandCursor.png") end))
+	track(dragHandle.MouseLeave:Connect(function() if not dragging then setCursor("") end end))
 	track(dragHandle.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			dragStart = input.Position
 			frameStart = frame.Position
 			dragging = true
+			setCursor("rbxasset://textures/Cursors/KeyboardMouse/ClosedHandCursor.png")
 		end
 	end))
 	track(dragHandle.InputChanged:Connect(function(input)
@@ -365,7 +386,10 @@ function AstraUI:CreateWindow(options)
 		if dragging and input == dragInput and dragStart and (input.Position - dragStart).Magnitude >= 3 then updateDrag(input) end
 	end))
 	track(UserInputService.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then stopDragging() end
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			stopDragging()
+			setCursor("")
+		end
 	end))
 
 	local grip = make("TextButton", {
@@ -382,10 +406,13 @@ function AstraUI:CreateWindow(options)
 	})
 	local resizeStart, initialSize, resizeInput
 	local resizing = false
+	track(grip.MouseEnter:Connect(function() setCursor("rbxasset://textures/Cursors/KeyboardMouse/ArrowFarCursor.png") end))
+	track(grip.MouseLeave:Connect(function() if not resizing then setCursor("") end end))
 	track(grip.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			resizeStart, initialSize = input.Position, frame.AbsoluteSize
 			resizing = true
+			setCursor("rbxasset://textures/Cursors/KeyboardMouse/ArrowFarCursor.png")
 		end
 	end))
 	track(grip.InputChanged:Connect(function(input)
@@ -404,6 +431,7 @@ function AstraUI:CreateWindow(options)
 			resizing = false
 			resizeInput = nil
 			resizeStart = nil
+			setCursor("")
 		end
 	end))
 
@@ -443,17 +471,32 @@ function Window:SetVisualEffects(enabled)
 	end
 	if not self.VisualEffects then
 		self.AccentRail.Visible = false
+		self.EffectWash.Visible = false
+		self.EffectStroke.Enabled = false
+		self.FrameStroke.Color = self.Theme.Stroke
+		self.FrameStroke.Transparency = 0.25
 		return
 	end
 
 	local token = self.EffectToken
 	self.AccentRail.Visible = true
+	self.EffectWash.Visible = true
+	self.EffectStroke.Enabled = true
+	self.FrameStroke.Color = self.Theme.Accent
+	self.FrameStroke.Transparency = 0.1
 	task.spawn(function()
 		while not self.Closed and self.VisualEffects and token == self.EffectToken do
-			self.AccentRail.Position = UDim2.new(0, -88, 1, 0)
-			local animation = tween(self.AccentRail, 1.9, { Position = UDim2.new(1, 88, 1, 0) })
+			self.AccentRail.Position = UDim2.new(0, -110, 1, 0)
+			tween(self.EffectStroke, 0.7, { Transparency = 0.22 })
+			tween(self.EffectWash, 0.7, { BackgroundTransparency = 0.86 })
+			local animation = tween(self.AccentRail, 1.7, { Position = UDim2.new(1, 110, 1, 0) })
 			self.EffectTween = animation
 			animation.Completed:Wait()
+			if self.VisualEffects and token == self.EffectToken then
+				tween(self.EffectStroke, 0.7, { Transparency = 0.52 })
+				tween(self.EffectWash, 0.7, { BackgroundTransparency = 0.93 })
+				task.wait(0.7)
+		end
 		end
 	end)
 end
@@ -613,20 +656,25 @@ function Section:AddToggle(options)
 	options = options or {}
 	local value = options.Default == true
 	local row = self:_row(40, (options.Title or "Toggle") .. " " .. (options.Description or ""))
-	text(row, options.Title or "Toggle", 12, self.Theme.Text, { Position = UDim2.fromOffset(0, 0), Size = UDim2.new(1, -70, 0, 20) })
-	if options.Description then text(row, options.Description, 10, self.Theme.Subtext, { Position = UDim2.fromOffset(0, 19), Size = UDim2.new(1, -70, 0, 17) }) end
-	local switch = make("TextButton", { AutoButtonColor = false, BackgroundColor3 = value and self.Theme.Accent or self.Theme.SurfaceRaised, BorderSizePixel = 0, Text = "", Position = UDim2.new(1, -48, 0.5, -11), Size = UDim2.fromOffset(42, 22), Parent = row })
+	local hitbox = make("TextButton", { Active = true, AutoButtonColor = false, BackgroundTransparency = 1, BorderSizePixel = 0, Modal = false, Text = "", Size = UDim2.fromScale(1, 1), ZIndex = 0, Parent = row })
+	text(row, options.Title or "Toggle", 12, self.Theme.Text, { Position = UDim2.fromOffset(0, 0), Size = UDim2.new(1, -122, 0, 20), ZIndex = 1 })
+	if options.Description then text(row, options.Description, 10, self.Theme.Subtext, { Position = UDim2.fromOffset(0, 19), Size = UDim2.new(1, -122, 0, 17), ZIndex = 1 }) end
+	local state = text(row, value and "ON" or "OFF", 10, value and self.Theme.Accent or self.Theme.Subtext, { Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(1, -101, 0.5, -9), Size = UDim2.fromOffset(41, 18), ZIndex = 2 })
+	local switch = make("TextButton", { Active = true, AutoButtonColor = false, BackgroundColor3 = value and self.Theme.Accent or self.Theme.SurfaceRaised, BorderSizePixel = 0, Text = "", Position = UDim2.new(1, -48, 0.5, -11), Size = UDim2.fromOffset(42, 22), ZIndex = 2, Parent = row })
 	round(switch, 11)
-	local dot = make("Frame", { BackgroundColor3 = self.Theme.Text, BorderSizePixel = 0, Position = value and UDim2.fromOffset(22, 3) or UDim2.fromOffset(3, 3), Size = UDim2.fromOffset(16, 16), Parent = switch })
+	local dot = make("Frame", { BackgroundColor3 = self.Theme.Text, BorderSizePixel = 0, Position = value and UDim2.fromOffset(22, 3) or UDim2.fromOffset(3, 3), Size = UDim2.fromOffset(16, 16), ZIndex = 3, Parent = switch })
 	round(dot, 8)
 	local api = { Container = row, Value = value }
 	function api:Set(nextValue, silent)
 		value, self.Value = nextValue == true, nextValue == true
 		tween(switch, 0.12, { BackgroundColor3 = value and self.Theme.Accent or self.Theme.SurfaceRaised })
 		tween(dot, 0.12, { Position = value and UDim2.fromOffset(22, 3) or UDim2.fromOffset(3, 3) })
+		state.Text = value and "ON" or "OFF"
+		state.TextColor3 = value and self.Theme.Accent or self.Theme.Subtext
 		if not silent then call(options.Callback, value) end
 	end
 	switch.MouseButton1Click:Connect(function() api:Set(not value) end)
+	hitbox.MouseButton1Click:Connect(function() api:Set(not value) end)
 	return api
 end
 
