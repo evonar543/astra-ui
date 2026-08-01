@@ -7,7 +7,7 @@ end
 
 -- Pin the library revision for this demo so executor-level HTTP caches cannot
 -- silently substitute an older copy of the UI library.
-local remoteUrl = "https://raw.githubusercontent.com/evonar543/astra-ui/307aec7/src/AstraUI.lua"
+local remoteUrl = "https://raw.githubusercontent.com/evonar543/astra-ui/0443aa0/src/AstraUI.lua"
 local source
 local localSourceExists = false
 
